@@ -142,5 +142,11 @@ def send_telegram(msg):
 
 if __name__ == "__main__":
     picks = analyze_stocks()
-    send_telegram("🔔 Dynamic bullish picks from today's gainers:\n" +
-                  ("\n".join(picks) if picks else "⚠️ No signals found"))
+    message = "🔔 Dynamic bullish picks from today's gainers:\n\n"
+
+if picks:
+    message += "\n\n".join(picks)
+else:
+    message += "⚠️ No signals found"
+
+send_telegram(message)

@@ -3,7 +3,7 @@ name: Daily Telegram Signal
 
 on:
   schedule:
-    - cron: "45 7 * * 1-5"  # Runs at 1:15 PM IST, Monday to Fri
+    - cron: "45 7 * * 1-5"  # Runs at 1:15 PM IST, Monday to Frid
   workflow_dispatch:        # Allows manual trigger from GitHub
 
 jobs:

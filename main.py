@@ -106,12 +106,14 @@ def analyze_stocks():
         # Conditions
         if (
             pd.notna(sma5) and pd.notna(sma20) and pd.notna(rsi)
+            and pd.notna(today_vol) and pd.notna(avg_vol)  # New check
             and sma5 > sma20
             and sma5_prev < sma20_prev
             and 45 <= rsi <= 60
             and today_vol > 1.5 * avg_vol
             and close >= recent_high * 0.98
         ):
+
             msg = (
                 f"✅ {s}\n"
                 f"🔼 Change: {change_percent:.2f}% today\n"

@@ -77,43 +77,48 @@ def compute_rsi(data, window=14):
 
 def analyze_stocks():
     messages = []
+
     for s in get_top_gainers():
         df = yf.download(s, period="25d", interval="1d", progress=False, auto_adjust=True)
+
         if df.empty or len(df) < 20:
             continue
 
+        # Indicators
         df["SMA5"] = df["Close"].rolling(5).mean()
         df["SMA20"] = df["Close"].rolling(20).mean()
         df["RSI"] = compute_rsi(df)
         df["AvgVol10"] = df["Volume"].rolling(10).mean()
 
+        # Skip if indicators contain NaN in last 2 rows
+        if df[["SMA5", "SMA20", "RSI", "AvgVol10"]].iloc[-2:].isnull().values.any():
+            print(f"⛔ Skipping {s} due to NaN values in indicators.")
+            continue
+
         try:
-            sma5 = df["SMA5"].iloc[-1]
-            sma5_prev = df["SMA5"].iloc[-2]
-            sma20 = df["SMA20"].iloc[-1]
-            sma20_prev = df["SMA20"].iloc[-2]
-            rsi = df["RSI"].iloc[-1]
-            today_vol = df["Volume"].iloc[-1]
-            avg_vol = df["AvgVol10"].iloc[-2]
-            recent_high = df["Close"].iloc[-10:].max()
-            close = df["Close"].iloc[-1]
-            open_price = df["Open"].iloc[-1]
+            sma5 = float(df["SMA5"].iloc[-1])
+            sma5_prev = float(df["SMA5"].iloc[-2])
+            sma20 = float(df["SMA20"].iloc[-1])
+            sma20_prev = float(df["SMA20"].iloc[-2])
+            rsi = float(df["RSI"].iloc[-1])
+            today_vol = int(df["Volume"].iloc[-1])
+            avg_vol = float(df["AvgVol10"].iloc[-2])
+            recent_high = float(df["Close"].iloc[-10:].max())
+            close = float(df["Close"].iloc[-1])
+            open_price = float(df["Open"].iloc[-1])
             change_percent = ((close - open_price) / open_price) * 100
         except Exception as e:
-            print(f"Skipping {s} due to error:", e)
+            print(f"❌ Error processing {s}: {e}")
             continue
 
         # Conditions
         if (
-            pd.notna(sma5) and pd.notna(sma20) and pd.notna(rsi)
-            and pd.notna(today_vol) and pd.notna(avg_vol)  # New check
-            and sma5 > sma20
+            sma5 > sma20
             and sma5_prev < sma20_prev
             and 45 <= rsi <= 60
             and today_vol > 1.5 * avg_vol
-            and close >= recent_high * 0.98
+            and close >= 0.98 * recent_high
         ):
-
             msg = (
                 f"✅ {s}\n"
                 f"🔼 Change: {change_percent:.2f}% today\n"
@@ -123,15 +128,13 @@ def analyze_stocks():
                 f"🎯 Close: {close:.2f} (10d High: {recent_high:.2f})"
             )
             messages.append(msg)
-            print(f"✅ {s} passed conditions:\n{msg}\n")
+            print(f"✅ {s} passed:\n{msg}\n")
         else:
-            print(f"❌ No Signal for {s}")
+            print(f"❌ {s} did not meet criteria.")
 
     if not messages:
         messages.append("⚠️ No bullish signals found today.")
-
     return messages
-
 
 
 def send_telegram(msg):
